@@ -5,7 +5,7 @@ import os
 import yaml
 
 
-map_name = 'esp'
+map_name = 'aut'
 centreline = np.loadtxt(f"maps/{map_name}_centreline.csv", delimiter=',')
 
 plt.figure()

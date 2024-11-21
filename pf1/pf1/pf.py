@@ -74,6 +74,7 @@ class myNode(Node):
 		self.particle_pub = self.create_publisher(PoseArray, 'particles', 10)
 		self.expected_pose_pub = self.create_publisher(PoseStamped, 'expected_pose', 10)
 		self.fake_scan_pub = self.create_publisher(LaserScan, 'fake_scan', 10)
+		self.proposal_pose_pub = self.create_publisher(PoseStamped, '/ego_racecar/pf_odom_pose', 10)
 		# Subscribers
 		self.scan_sub = self.create_subscription(LaserScan, 'scan', self.scan_callback, 10)
 		self.odom_sub = self.create_subscription(Odometry, '/ego_racecar/odom', self.odom_callback, 10)
@@ -293,6 +294,7 @@ class myNode(Node):
 		#Resample
 		proposal_distribution = self.resample()
 		self.motion_model(proposal_distribution, deltas)
+		
 		self.sensor_model(proposal_distribution, observation, self.weights)
 		# normalize
 		self.weights /= np.sum(self.weights)
@@ -325,6 +327,8 @@ class myNode(Node):
 		particles[:,0] += deltas[1]*np.cos(particles[:,2]+deltas[0]) + np.random.normal(loc=0.0,scale=self.MOTION_DISPERSION_X,size=self.MAX_PARTICLES)
 		particles[:,1] += deltas[1]*np.sin(particles[:,2]+deltas[0]) + np.random.normal(loc=0.0,scale=self.MOTION_DISPERSION_Y,size=self.MAX_PARTICLES)
 		particles[:,2] += deltas[0] + deltas[2] + np.random.normal(loc=0.0,scale=self.MOTION_DISPERSION_THETA,size=self.MAX_PARTICLES)
+  
+
 
 	def sensor_model(self, particles, obs, weights):
 		'''
@@ -347,8 +351,20 @@ class myNode(Node):
 
 	def expectedPose(self):
 		return np.dot(self.particles.transpose(), self.weights)
+
+	def Proposal_Pose(self, proposal_distribution):
+			return np.dot(proposal_distribution.transpose(), self.weights)
 	
 	def publishExpectedPose(self):
+		pose = PoseStamped()
+		pose.header.stamp = self.get_clock().now().to_msg()
+		pose.header.frame_id = 'map'
+		pose.pose.position.x = self.expected_pose[0]
+		pose.pose.position.y = self.expected_pose[1]
+		pose.pose.orientation = angle_to_quaternion(self.expected_pose[2])
+		self.expected_pose_pub.publish(pose)
+  
+	def publishProposalPose(self):
 		pose = PoseStamped()
 		pose.header.stamp = self.get_clock().now().to_msg()
 		pose.header.frame_id = 'map'

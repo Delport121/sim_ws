@@ -21,6 +21,8 @@ setup(
     entry_points={
         'console_scripts': [
             "pf_node = pf1.pf:main",
+            "Noisy_odom = pf1.Noisy_odom:main",
+            "Compare_path = pf1.Compare_paths:main",
         ],
     },
 )
